@@ -3,7 +3,7 @@ const Amorph = require('Amorph')
 const random = require('random-amorph')
 const aes = require('aes-128-cbc-amorph')
 const InvalidEncapsulationVersionError = require('./errors/InvalidEncapsulationVersion')
-const InvalidEncapsulationLengthError = require('./errors/InvalidEncapsulationVersion')
+const InvalidEncapsulationLengthError = require('./errors/InvalidEncapsulationLength')
 const InvalidChecksumError = require('./errors/InvalidChecksum')
 const keccak256 = require('keccak256-amorph')
 
