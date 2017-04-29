@@ -18,8 +18,7 @@
   "homepage": "https://github.com/safezero/korok#readme",
   "dependencies": {
     "aes-128-cbc-amorph": "0.0.1",
-    "amorph": "^1.1.0",
-    "arguguard": "^0.6.1",
+    "arguguard": "^2.1.1",
     "keccak256-amorph": "0.0.1",
     "random-amorph": "0.0.1",
     "testable-error": "^0.1.1"

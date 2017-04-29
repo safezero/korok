@@ -1,5 +1,4 @@
 const arguguard = require('arguguard')
-const Amorph = require('Amorph')
 const random = require('random-amorph')
 const aes = require('aes-128-cbc-amorph')
 const InvalidEncapsulationVersionError = require('./errors/InvalidEncapsulationVersion')
@@ -8,7 +7,7 @@ const InvalidChecksumError = require('./errors/InvalidChecksum')
 const keccak256 = require('keccak256-amorph')
 
 function Korok(key) {
-  arguguard('Korok', [Amorph], arguments)
+  arguguard('Korok', ['Amorph'], arguments)
   this.key = key
 }
 
@@ -19,7 +18,7 @@ function getChecksum(key) {
 }
 
 Korok.prototype.derive = function(key) {
-  arguguard('korok.derive', [Amorph], arguments)
+  arguguard('korok.derive', ['Amorph'], arguments)
   const prehash = this.key.as('array', (array) => {
     return array.concat(key.to('array'))
   })
@@ -27,7 +26,7 @@ Korok.prototype.derive = function(key) {
 }
 
 Korok.prototype.encapsulate = function(passphrase, iv) {
-  arguguard('korok.encapsulate', [Amorph, Amorph], arguments)
+  arguguard('korok.encapsulate', ['Amorph', 'Amorph'], arguments)
   const encrypted = aes.encrypt(this.key, keccak256(passphrase), iv)
   const checksum = getChecksum(this.key)
   return encrypted.as('array', (array) => {
@@ -41,7 +40,7 @@ Korok.generate = function generate() {
 }
 
 Korok.unencapsulate = function unencapsulate(encapsulation, passphrase) {
-  arguguard('Korok.unencapsulate', [Amorph, Amorph], arguments)
+  arguguard('Korok.unencapsulate', ['Amorph', 'Amorph'], arguments)
   const encapsulationArray = encapsulation.to('array')
   if (encapsulationArray.length !== 53) {
     throw new InvalidEncapsulationLengthError(`Encapsulation should be 49 bytes long, received ${encapsulationArray.length}`)
