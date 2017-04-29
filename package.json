@@ -1,6 +1,6 @@
 {
   "name": "korok",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Secret generator for dapps",
   "main": "index.js",
   "scripts": {
