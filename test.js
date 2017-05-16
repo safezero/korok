@@ -8,20 +8,26 @@ const InvalidEncapsulationLengthError = require('./errors/InvalidEncapsulationLe
 const InvalidEncapsulationVersionError = require('./errors/InvalidEncapsulationVersion')
 
 const Amorph = require('amorph')
+Amorph.loadPlugin(require('amorph-buffer'))
 Amorph.loadPlugin(require('amorph-bignumber'))
-Amorph.ready()
+Amorph.crossConverter.addPath(['buffer', 'hex', 'bignumber', 'number'])
+Amorph.crossConverter.addPath(['ascii', 'buffer', 'uint8Array'])
 
 chai.should()
 
 describe('Korok', () => {
   let korok
   let korok2
-  const derivationKeys = _.range(10).map(() => {
-    return random(random(1).to('number'))
-  })
+  let derivationKeys
   let korokEncapsulation
   let korok2Encapsulation
   const passphrase = new Amorph('my passphrase', 'ascii')
+
+  it('should create derivation keys', () => {
+    derivationKeys = _.range(10).map(() => {
+      return random(random(1).to('number'))
+    })
+  })
 
   it('should generate', () => {
     korok = Korok.generate()
@@ -33,7 +39,7 @@ describe('Korok', () => {
     derivationKeys.forEach((derivationKey) => {
       korokKey = korok.derive(derivationKey)
       korok2Key = korok2.derive(derivationKey)
-      korokKey.equals(korok2Key, 'buffer').should.equal(true)
+      korokKey.equals(korok2Key, 'uint8Array').should.equal(true)
     })
   })
   it('should encapsulate korok and korok2', () => {
@@ -48,8 +54,8 @@ describe('Korok', () => {
   })
   describe('errors', () => {
     it('should throw InvalidVersionError', () => {
-      const corruptedEncapsulation = korokEncapsulation.as('array', (array) => {
-        const clone = _.clone(array)
+      const corruptedEncapsulation = korokEncapsulation.as('uint8Array', (uint8Array) => {
+        const clone = uint8Array.slice(0)
         clone[0] = random(1).to('number')
         return clone
       })
@@ -65,19 +71,19 @@ describe('Korok', () => {
       })
     })
     it('should throw InvalidChecksumError', () => {
-      korokEncapsulation.to('array').forEach((byte, index) => {
-        if (index === 0) {
-          return
-        }
-        const corruptedEncapsulation = korokEncapsulation.as('array', (array) => {
-          const clone = _.clone(array)
+      const corruptedEncapsulation = korokEncapsulation.as('uint8Array', (uint8Array) => {
+        const clone = uint8Array.slice(0)
+        clone.forEach((byte, index) => {
+          if (index === 0) {
+            return
+          }
           clone[index] = random(1).to('number')
-          return clone
         })
-        ;(() => {
-          Korok.unencapsulate(corruptedEncapsulation, passphrase)
-        }).should.throw(InvalidChecksumError)
+        return clone
       })
+      ;(() => {
+        Korok.unencapsulate(corruptedEncapsulation, passphrase)
+      }).should.throw(InvalidChecksumError)
     })
   })
 })
