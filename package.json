@@ -17,21 +17,16 @@
   },
   "homepage": "https://github.com/safezero/korok#readme",
   "dependencies": {
-    "aes-128-cbc-amorph": "^0.0.3",
-    "arguguard": "^2.1.1",
+    "aes-js": "^3.1.0",
     "array-equal": "^1.0.0",
-    "keccak256-amorph": "^0.0.4",
-    "random-amorph": "^1.0.0",
+    "defunction": "^4.0.4",
+    "hendricks": "^1.1.1",
     "testable-error": "^0.1.1"
   },
   "devDependencies": {
-    "amorph": "^2.0.0",
-    "amorph-bignumber": "^1.0.2",
-    "amorph-buffer": "^1.1.5",
     "chai": "^3.5.0",
     "chai-amorph": "0.0.5",
-    "lodash": "^4.17.4",
-    "mocha": "^3.2.0",
-    "time-require": "^0.1.2"
+    "chai-as-promised": "^7.1.1",
+    "mocha": "^3.2.0"
   }
 }

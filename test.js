@@ -1,89 +1,56 @@
 const Korok = require('./')
-const random = require('random-amorph')
-const _ = require('lodash')
 const chai = require('chai')
+const chaiAsPromised = require('chai-as-promised')
+const InvalidChecksumError = require('./InvalidChecksumError')
 
-const InvalidChecksumError = require('./errors/InvalidChecksum')
-const InvalidEncapsulationLengthError = require('./errors/InvalidEncapsulationLength')
-const InvalidEncapsulationVersionError = require('./errors/InvalidEncapsulationVersion')
-
-const Amorph = require('amorph')
-Amorph.loadPlugin(require('amorph-buffer'))
-Amorph.loadPlugin(require('amorph-bignumber'))
-Amorph.crossConverter.addPath(['buffer', 'hex', 'bignumber', 'number'])
-Amorph.crossConverter.addPath(['ascii', 'buffer', 'uint8Array'])
-
+chai.use(chaiAsPromised)
 chai.should()
 
 describe('Korok', () => {
   let korok
-  let korok2
-  let derivationKeys
-  let korokEncapsulation
-  let korok2Encapsulation
-  const passphrase = new Amorph('my passphrase', 'ascii')
+  let secret
+  let encoding
+  let korok1
 
-  it('should create derivation keys', () => {
-    derivationKeys = _.range(10).map(() => {
-      return random(random(1).to('number'))
-    })
-  })
+  const password = new Uint8Array([0, 1, 2, 3, 4])
 
   it('should generate', () => {
-    korok = Korok.generate()
-  })
-  it('should create from key', () => {
-    korok2 = new Korok(korok.key)
-  })
-  it('korok and korok2 should derive the same keys', () => {
-    derivationKeys.forEach((derivationKey) => {
-      korokKey = korok.derive(derivationKey)
-      korok2Key = korok2.derive(derivationKey)
-      korokKey.equals(korok2Key, 'uint8Array').should.equal(true)
+    return Korok.generate(password, 20).then((_korok) => {
+      korok = _korok
     })
   })
-  it('should encapsulate korok and korok2', () => {
-    korokEncapsulation = korok.encapsulate(passphrase, random(16))
-    korok2Encapsulation = korok.encapsulate(passphrase, random(16))
-  })
-  it('should unencapsulate korok correctly', () => {
-    Korok.unencapsulate(korokEncapsulation, passphrase).key.equals(korok.key).should.equal(true)
-  })
-  it('should unencapsulate korok2 correctly', () => {
-    Korok.unencapsulate(korok2Encapsulation, passphrase).key.equals(korok.key).should.equal(true)
-  })
-  describe('errors', () => {
-    it('should throw InvalidVersionError', () => {
-      const corruptedEncapsulation = korokEncapsulation.as('uint8Array', (uint8Array) => {
-        const clone = uint8Array.slice(0)
-        clone[0] = random(1).to('number')
-        return clone
-      })
-      ;(() => {
-        Korok.unencapsulate(corruptedEncapsulation, passphrase)
-      }).should.throw(InvalidEncapsulationVersionError)
+  
+  it('should get secret', () => {
+    return korok.getSecret(password).then((_secret) => {
+      secret = _secret
+      secret.should.be.instanceof(Uint8Array)
+      secret.should.have.length(32)
     })
-    it('should throw InvalidEncapsulationLengthError', () => {
-      const bads = [random(0), random(58), random(60)].forEach((bad) => {
-        ;(() => {
-          Korok.unencapsulate(bad, passphrase)
-        }).should.throw(InvalidEncapsulationLengthError)
-      })
-    })
-    it('should throw InvalidChecksumError', () => {
-      const corruptedEncapsulation = korokEncapsulation.as('uint8Array', (uint8Array) => {
-        const clone = uint8Array.slice(0)
-        clone.forEach((byte, index) => {
-          if (index === 0) {
-            return
-          }
-          clone[index] = random(1).to('number')
-        })
-        return clone
-      })
-      ;(() => {
-        Korok.unencapsulate(corruptedEncapsulation, passphrase)
-      }).should.throw(InvalidChecksumError)
-    })
+  })
+  
+  it('should get encoding', () => {
+    encoding = korok.getEncoding()
+    encoding.should.be.instanceof(Uint8Array)
+    encoding.should.have.length(54)
+  })
+  
+  it('should fromEncoding', () => {
+    korok1 = Korok.fromEncoding(encoding) 
+  })
+  
+  it('should get the same secret', () => {
+    return korok1.getSecret(password).should.eventually.deep.equal(secret)
+  })
+  
+  it('should throw invalid checksum error', () => {
+    const badEncoding = encoding.slice()
+    badEncoding[5] = (badEncoding[0]) + 1 % 256
+    return Korok.fromEncoding(badEncoding).getSecret(password).should.eventually.be.rejectedWith(InvalidChecksumError)
+  })
+  
+  it('should throw invalid checksum error (2)', () => {
+    const badEncoding = encoding.slice()
+    badEncoding[badEncoding.length - 1] = (badEncoding[badEncoding.length - 1]) + 1 % 256
+    return Korok.fromEncoding(badEncoding).getSecret(password).should.eventually.be.rejectedWith(InvalidChecksumError)
   })
 })
